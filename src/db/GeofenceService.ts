@@ -31,46 +31,47 @@ const CHECK_SCRIPT = `
 `;
 
 export class GeofenceService {
-    private redis = new Redis({
-      host: process.env.REDIS_HOST || '127.0.0.1',
-      port: Number(process.env.REDIS_PORT) || 6379,
-      maxRetriesPerRequest: null
+  private redis = new Redis({
+    host: process.env.REDIS_HOST || '127.0.0.1',
+    port: Number(process.env.REDIS_PORT) || 6379,
+    maxRetriesPerRequest: null
+  });
+
+  constructor() {
+    this.redis.defineCommand('checkGeofence', {
+      numberOfKeys: 1,
+      lua: CHECK_SCRIPT
     });
+  }
 
-    constructor() {
-        this.redis.defineCommand('checkGeofence', {
-            numberOfKeys: 1,
-            lua: CHECK_SCRIPT
-        });
+  /**
+    * * It divides the polygon into H3 cells and saves it as a Redis Set.
+    */
+  async setupFence(id: string, coordinates: [number, number][]) {
+    const cells = SpatialIndexer.getPolygonCells(coordinates);
+    const key = `fences:${id}`;
+
+    // Clear old data and add new data.
+    await this.redis.del(key);
+
+    // Redis SADD (Set Add) accepts multiple arguments.
+    if (cells.length > 0) {
+      await this.redis.sadd(key, ...cells);
+      console.log(`[DB] ${id} field: ${cells.length} cells were written to Redis.`);
+    } else {
+      throw new Error("The polygon area could not be divided into H3 cells. Please check the coordinates.");
     }
 
-    /**
-      * Poligonu H3 hücrelerine böler ve Redis Set olarak kaydeder.
-      */
-    async setupFence(id: string, coordinates: [number, number][]) {
-        const cells = SpatialIndexer.getPolygonCells(coordinates);
-        const key = `fences:${id}`;
+  }
 
-        // Eski veriyi temizle ve yenisini ekle
-        await this.redis.del(key);
+  /**
+  * Checks vehicle position (Lua Script call)
+  */
+  async processUpdate(assetId: string, lat: number, lng: number, fenceId: string): Promise<string> {
+    const cell = SpatialIndexer.getCell(lat, lng);
 
-        // Redis SADD (Set Add) çok sayıda argümanı kabul eder
-        if (cells.length > 0) {
-            await this.redis.sadd(key, ...cells);
-            console.log(`[DB] ${id} alanı için ${cells.length} hücre Redis'e yazıldı.`);
-        } else {
-            throw new Error("Poligon alanı H3 hücrelerine bölünemedi. Koordinatları kontrol edin.");
-        }
-    }
-
-    /**
-     * Araç konumunu kontrol eder (Lua Script çağrısı)
-     */
-    async processUpdate(assetId: string, lat: number, lng: number, fenceId: string): Promise<string> {
-        const cell = SpatialIndexer.getCell(lat, lng);
-
-        // Tanımladığımız Lua script'ini çağırıyoruz
-        // @ts-ignore
-        return await this.redis.checkGeofence(assetId, cell, fenceId, 3);
-    }
+  // We call the Lua script we defined
+  // @ts-ignore
+    return await this.redis.checkGeofence(assetId, cell, fenceId, 3);
+  }
 }

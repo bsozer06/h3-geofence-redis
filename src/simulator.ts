@@ -4,42 +4,42 @@ async function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// Simüle edilmiş rota: [lat, lng]
+// Simulated route: [lat, lng]
 const route: [number, number][] = [
-  [41.035, 29.001], // Dışarıda
-  [41.037, 29.005], // Dışarıda
-  [41.041, 29.008], // İÇERİDE (Enter bekliyoruz)
-  [41.042, 29.010], // İÇERİDE
-  [41.041, 29.009], // İÇERİDE (Hysteresis testi: Burada hafif dışarı çıksa bile hemen exit demeyecek)
-  [41.030, 29.000], // DIŞARIDA (Exit bekliyoruz)
+  [41.035, 29.001], // Outside
+  [41.037, 29.005], // Outside
+  [41.041, 29.008], // INSIDE (Expecting ENTER)
+  [41.042, 29.010], // INSIDE
+  [41.041, 29.009], // INSIDE (Hysteresis test: even if it slightly goes outside here, it shouldn't immediately trigger exit)
+  [41.030, 29.000], // OUTSIDE (Expecting EXIT)
 ];
 
 async function runSimulation() {
   const assetId = "car_001";
   const fenceId = "besiktas_zone";
 
-  console.log(`\n--- Simülasyon Başlıyor: Araç ${assetId} harekete geçiyor ---\n`);
+  console.log(`\n--- Simulation Started: Vehicle ${assetId} is moving ---\n`);
 
   for (const coord of route) {
     const [lat, lng] = coord;
-    console.log(`Konum Güncellemesi: Lat:${lat}, Lng:${lng}`);
+    console.log(`Location Update: Lat:${lat}, Lng:${lng}`);
 
     const result = await geofenceService.processUpdate(assetId, lat, lng, fenceId);
     
     if (result === "ENTER") {
-      console.log("🚨 [BİLDİRİM] ARAÇ ALANA GİRDİ!");
+      console.log("🚨 [NOTIFICATION] VEHICLE ENTERED THE AREA!");
     } else if (result === "EXIT") {
-      console.log("🚷 [BİLDİRİM] ARAÇ ALANDAN ÇIKTI!");
+      console.log("🚷 [NOTIFICATION] VEHICLE EXITED THE AREA!");
     } else {
-      console.log("... İzleniyor (Değişim yok)");
+      console.log("... Monitoring (No change)");
     }
 
-    await sleep(1500); // 1.5 saniye bekle (Gerçek zamanlı hissi için)
+    await sleep(1500); // Wait 1.5 seconds (for a real-time feel)
   }
 
-  console.log("\n--- Simülasyon Tamamlandı ---");
+  console.log("\n--- Simulation Completed ---");
   process.exit(0);
 }
 
-// Index.ts'in hazır olması için kısa bir bekleme
+// Short delay to ensure index.ts is ready
 setTimeout(runSimulation, 2000);

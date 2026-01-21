@@ -1,5 +1,5 @@
 services:
-  # Redis Servisimiz
+  # Redis Service
   redis_db:
     image: redis:alpine
     container_name: redis_geofence
@@ -7,13 +7,13 @@ services:
       - "6379:6379"
     restart: always
 
-  # Bizim TypeScript Uygulamamız
+  # Our app
   geofence_app:
     build: .
     container_name: geofence_service
     depends_on:
       - redis_db
     environment:
-      - REDIS_HOST=redis_db # Dikkat: Localhost yerine servis ismini yazıyoruz!
+      - REDIS_HOST=redis_db # be careful !
       - REDIS_PORT=6379
     restart: on-failure

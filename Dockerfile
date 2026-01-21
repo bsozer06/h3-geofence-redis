@@ -1,20 +1,20 @@
-# Node.js'in hafif bir sürümünü kullanıyoruz
+# Light version of Node.js
 FROM node:22-alpine
 
-# Çalışma dizinini ayarla
+# set work path environment
 WORKDIR /app
 
-# Sadece package dosyalarını kopyala (katmanlı yapı için)
+# Only copy package file
 COPY package*.json ./
 
-# Bağımlılıkları yükle
+# install dependencies
 RUN npm install
 
-# Tüm kodu kopyala
+# copy all codes
 COPY . .
 
-# TypeScript kodunu JavaScript'e derle (Veya tsx kullanıyorsan direkt çalıştır)
+# Compile TypeScript code into JavaScript (Or run it directly if you're using tsx)
 RUN npx tsc
 
-# Uygulamayı başlat
+# Launch the application
 CMD ["node", "--loader", "ts-node/esm", "src/simulator.ts"]

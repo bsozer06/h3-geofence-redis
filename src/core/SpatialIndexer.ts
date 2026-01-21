@@ -8,7 +8,7 @@ export class SpatialIndexer {
   }
 
   static getPolygonCells(coordinates: [number, number][]): string[] {
-    // Poligonu H3 setine dönüştürür
+    // Converts the polygon to an H3 set.
     return polygonToCells(coordinates, this.RESOLUTION);
   }
 }

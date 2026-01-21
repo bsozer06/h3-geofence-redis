@@ -3,28 +3,28 @@ import { SpatialIndexer } from "./core/SpatialIndexer.js";
 
 const geofenceService = new GeofenceService();
 
-// Test amaçlı bir poligon (Örn: Beşiktaş Meydan civarı)
+// A testing range (e.g., near Beşiktaş Square)
 const besiktasPolygon: [number, number][] = [
   [41.041, 29.006],
   [41.043, 29.009],
   [41.040, 29.012],
   [41.038, 29.008],
-  [41.041, 29.006] // Kapatma noktası
+  [41.041, 29.006]
 ];
 
 async function init() {
-  console.log("--- Geofence Sistemi Başlatılıyor ---");
+  console.log("--- Initializing Geofence System ---");
   
-  // 1. Poligonu Redis'e kaydet (H3 hücrelerine bölerek)
+  // 1. Save the polygon to Redis (by splitting it into H3 cells)
   const fenceId = "besiktas_zone";
   const cells = SpatialIndexer.getPolygonCells(besiktasPolygon);
   
-  // GeofenceService içindeki addFence metodunu çağırıyoruz (Henüz yazmadıysan ekle)
-  // Redis'e SADD ile bu hücreleri ekliyoruz
+  // We add these cells to Redis using SADD
   await geofenceService.setupFence(fenceId, besiktasPolygon);
   
-  console.log(`${fenceId} alanı ${cells.length} adet H3 hücresi ile tanımlandı.`);
+  console.log(`${fenceId} area has been defined with ${cells.length} H3 cells.`);
 }
 
 export { geofenceService };
+
 init();
